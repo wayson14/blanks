@@ -1,0 +1,15 @@
+{% extends "base.html" %} 
+
+{% block title %} 
+the blanks project game page
+{% endblock %}
+
+{% block content %}
+{% for x in range (15) %} 
+{% for y in range (15) %} 
+
+<div>{{board[x][y]}}</div>
+
+{%endfor%}
+{%endfor%}
+{% endblock %} 

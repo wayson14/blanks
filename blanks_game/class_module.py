@@ -1,14 +1,43 @@
-from bitarray import bitarray
-from .func_module import dec_to_bin
+from flask import Flask
 
 
-class Ip4object (object):
-    """
-    Definition of a 32 bit length IPv4 address, 
-    and bunch of methods.
-    """
+class HomePage:
+    def __init__(self):
+        pass
+    
+    def show(self):
+        return "This page is an instance called from a class."
 
-    def __init__(self, address):
-        self.address = dec_to_bin(address)
-        print(self.address)
-        # bitarray()
+
+class Access:
+    def __init__(self):
+        pass
+
+    def authorization(self):
+        return True
+
+class Game:
+    def __init__(self, *args, **kwargs):
+        self.players = 2
+        self.letter_set = "polish_standard"
+        self.board_type = "standard"
+        self.player_time = 10
+
+    def set_board(self, *args, **kwargs):
+        try:
+            self.board_type = "standard"
+            self.board = [[0] * 15 for i in range(15)]
+            if self.board_type != "standard":
+                pass
+            else:
+                for x in range (15):
+                    for y in range (15):
+                        board[x][y] = "0"
+        except Exception as err:
+            return err
+        else:
+            return self.board
+
+
+    def render_board(board):
+        pass
