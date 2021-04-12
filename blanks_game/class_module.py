@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append(".")
+
 from flask import Flask
 import copy
 import random
@@ -21,25 +25,38 @@ class Access:
 
 class Game(object):
     
-    def __init__(self):
-        self.letter_set = pl_letter_set
-        self.letter_sack = []
+    def __init__(self, players = 2, time = 0, letter_set = pl_letter_set, used_dic = pl_letter_dict, *args, **kwargs):
+        self.letter_set = letter_set
+        self.used_dic = used_dic
+        self.letter_sack = [] #filled 4 lines below
         self.used_letter_sack = []
+        self.players = players
+        self.time = time
         for i in self.letter_set.keys():
             for j in range (self.letter_set[i]):
                 self.letter_sack.append(i)
-        
+    
 
     def get_letters(self, count):
         to_return = []
         for i in range (count):
             chosen = random.choice(range(len(self.letter_sack)))
             to_return.append(self.letter_sack[chosen])
-            self.used_letter_sack.append(self.letter_sack[chosen])
+            
             del(self.letter_sack[chosen])
         
-        
         return to_return
+
+    def use_letters(self, word):
+        to_use = []
+        for char in word:
+            to_use.append(char)
+            self.used_letter_sack.append(char)
+
+        return to_use
+    
+
+
         
 
 
@@ -105,8 +122,10 @@ class Board(Game):
     
 
 class Player(Game):
-    def __init__(self, board_obj, *args, **kwargs):
+    def __init__(self, board_obj, game_obj, *args, **kwargs):
         self.board_obj = board_obj
+        self.game_obj = game_obj
+        self.deck = game_obj.get_letters(7)
         self.moves_value = []
         self.moves_board = []
         self.used_dic = pl_letter_dict
@@ -119,7 +138,13 @@ class Player(Game):
     
     def check_if_possible(self, word, space, direction, start_point):
         if not self.check_if_enough_space(word,space):
-            return False
+            return "wrong place"
+
+        for char in word:
+            if char not in self.deck:
+                return "used not owned letters" 
+
+
         s = start_point
         i = 0
         l = None
@@ -127,14 +152,26 @@ class Player(Game):
             if direction == "vertical":
                 l = self.board_obj.check_letter_field([s[0]+i,s[1]])
                 if  l != char and l != 0:
-                    return False
+                    return "different word already placed"
             elif direction == "horizontal":
                 l = self.board_obj.check_letter_field([s[0],s[1]+i])
                 if  l != char and l != 0:
-                    return False
+                    return "diffreent word already placed"
             i += 1
         
         return True
+    
+    def ui_turn(self):
+        
+        move_list = []
+        
+        texts = ["WORD: ", "DIRECTION: (h/v) ", "POSITION: "]
+        for text in texts:
+            move_list.append(input(text))
+
+        return move_list
+
+
         
 
 
@@ -152,7 +189,8 @@ class Player(Game):
         elif direction == "horizontal":
             space = 15 - start_point[1]
         
-        if not self.check_if_possible(word,space,direction,start_point):
+        if self.check_if_possible(word,space,direction,start_point) != True:
+            error = self.check_if_possible(word,space,direction,start_point) 
             raise ValueError
 
         for char in word:
@@ -178,7 +216,7 @@ class Player(Game):
         for key in self.used_dic.keys():
             if letter in key:
                 return self.used_dic[key]
-        pass
+
     def calc_word_score(self, before_board, after_board, dic=pl_letter_dict, *args, **kwargs):
 
         self.used_dic = dic
@@ -217,15 +255,95 @@ class Player(Game):
         return total
 
     
-    
-    def turn(self, word, direction, start_point, *args, **kwargs):
+    def check_win(self):
+            
+        if end:
+            pass
 
-        self.move_translate(word, direction, start_point, *args, **kwargs)
-        value = self.calc_word_score(self.before_move_board,self.after_move_board)
 
-        self.moves_value.append(value)
-        self.moves_board.append(self.after_move_board)
+    def turn(self, *args, **kwargs):
+        turn_flag = True
+        while turn_flag == True:
+            print(f"DECK: {self.deck} POINTS: {self.moves_value} PLAYER: {self.p}")
+            turn_flag = False
 
+            kind = input("Turn type: (normal, pass, exchange)")
+            
+            
+            if kind == "normal":
+
+                try:
+                    move = self.ui_turn()
+
+                    word = move[0]
+                    direction = move[1]
+                    start_point = eval(move[2])
+
+                    if direction == "h":
+                        direction = "horizontal"
+                    else:
+                        direction = "vertical"
+                except:
+                    turn_flag = True
+                    continue
+                # word = "rower"
+                # direction = "horizontal"
+                # start_point = (6,6)
+
+                try:
+
+                    self.move_translate(word, direction, start_point, *args, **kwargs)
+                    value = self.calc_word_score(self.before_move_board,self.after_move_board)
+
+                    self.moves_value.append(value)
+                    self.moves_board.append(self.after_move_board)
+
+                    used = self.game_obj.use_letters(word)
+                    got = self.game_obj.get_letters(len(word))
+
+                    for char in used:
+                        if char in self.deck:
+                            del self.deck[self.deck.index(char)]
+                    
+                    for char in got:
+                        print(self.deck)
+                        self.deck.append(char)
+                
+                except ValueError:
+                    turn_flag = True
+                    print("Check if you passed values correctly!")
+                
+                except:
+                    turn_flag = True
+                    print("An error has occured, check values and try again!")
+            
+            if kind == "pass":
+                print("passed turn")
+                try:
+                    self.moves_value.append(0)
+                except:
+                    turn_flag = True
+                    continue
+
+            if kind =="exchange":
+                try:
+                    to_exchange = input("Which letters do you want to exchange: ")
+
+                    for char in to_exchange:
+                        del self.deck[self.deck.index(char)]
+
+                    got = self.game_obj.get_letters(len(to_exchange))
+                    for char in got:
+                        print(self.deck)
+                        self.deck.append(char)
+
+                    self.moves_value.append("-")
+                except:
+                    turn_flag = True
+                    continue
+        
+
+        
         return True
 
 
