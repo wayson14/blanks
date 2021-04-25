@@ -44,6 +44,16 @@ class TestCore(unittest.TestCase):
         pass
 
     #checking section
+
+    def test_map_words(self):
+        self.core.board = assert_row_and_column
+        x = self.core.map_words(["n", "row", (7,8), "horizontal"])
+        print()
+        print(x)
+
+        self.core.board = letter_board
+
+
     def test_check_space(self):
         with self.assertRaises(EndOfBoardError):
             result = self.core.check_space(["n", "rower", (14,14), "horizontal"])
@@ -68,18 +78,16 @@ class TestCore(unittest.TestCase):
     
         self.assertTrue(self.core.check_letters("rower",["r","o","w","e","r"]))
 
-    def test_check_dictionary(self):
-        self.core.handle_dict()
-        self.assertTrue(self.core.check_dictionary("żyźniejszy"))
+    # def test_check_dictionary(self):
+    #     self.core.handle_dict()
+    #     self.assertTrue(self.core.check_dictionary("żyźniejszy"))
 
-    def test_map_grid(self):
-        
-        self.core.board = resources.assert_row_and_column
-        pos_list = (self.core.map_grid((7,9)))
-        self.core.form_words(pos_list)
-        self.core.print_board()
-        self.core.clear_board()
-        
+    def test_blank_check(self):
+        self.assertEqual(self.core.blank_check(["n", "rower", (0,0), "vertical"], ["*","o","w","e","r"]), [[(4,0),'r']])
+
+        self.assertListEqual(self.core.blank_check(["n", "rower", (0,0), "vertical"], ["*","o","w","*","r"]), [[(3,0),'e'], [(4,0),'r']])
+
+        self.assertListEqual(self.core.blank_check(["n", "rower", (0,0), "horizontal"], ["*","o","w","*","r"]), [[(0,3),'e'], [(0,4),'r']])
         
         
 

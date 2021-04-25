@@ -25,14 +25,17 @@ class App(object):
             
             #initial letter give
             if core.turn == 0:
-                core.letter_dict = core.handle_dict()
+                core.word_dict = core.handle_dict()
                 for i in range(core.players):
                     core.player[i].deck = core.get_letters(7)
             
+            core.show_all_vars()
 
             #board & ui render
             core.print_ui(self.player_turn)
             core.print_board()
+
+            
 
             #input from a player/saved 
             material = core.get_input()
@@ -77,41 +80,75 @@ class App(object):
                 continue
             
             self.player_turn += 1
+            core.turn += 1
             
             if self.player_turn > core.players-1:
                 self.player_turn = 0
         
     def normal_turn(self, move = "move"):
 
-        move = getattr(core, move)
-        
-        word = move[1]
-        deck = core.player[self.player_turn].deck
+        try:
+            move = getattr(core, move)
+            words = []
+            word = move[1]
+            deck = core.player[self.player_turn].deck
+
 
         #checking whether move is possible
-        try:
             core.check_space(move)
             core.check_board(move)
+            core.blanks_info += core.blank_check(move,deck)
             core.check_allignment(move)
             core.check_letters(word, deck)
-            core.check_dictionary(word)
+        
+        except BaseException as err:
+            raise err
             
+
+        try:
+            #backuping board, placing word
+            core.make_before_board()
+            core.place_word(move)
+
+            if core.dict_check == True:
+                words += core.map_words(move)
+
+                for i in words:
+                    core.check_dictionary(i)
+
+        except BaseException as err:
+            core.board = core.before_board
+            raise err
+            
+
+
+
+        try:
+            #core.print_board(board="before_board")
+            #core.print_board()
+
+            score = core.score_word()
+            core.player[self.player_turn].points.append(score)
+
+            core.rm_letters(word, deck)
+            core.player[self.player_turn].moves.append(move)
+            core.player[self.player_turn].deck = deck + core.get_letters(7-len(deck))
+
         except BaseException as err:
             raise err
 
-        core.make_before_board()
-        core.place_word(move)
-
-        score = core.score_word()
-        core.player[self.player_turn].points.append(score)
-
-        core.rm_letters(word, deck)
-        core.player[self.player_turn].deck = deck + core.get_letters(len(word))
-
     def pass_turn(self, move = "move"):
-        core.turn += 1
-        self.player_turn += 1
+        core.moves.append('!p')
+        pass
 
+    def surrender_turn(self, move = "move"):
+        for p in range(core.players):
+            print(f"PLAYER {p} MOVES: ")
+            for i in range(len(core.player[p].moves)):
+                print(f"{core.player[p].moves[i]} | {core.player[p].points[i]}")
+
+        self.run_flag = False
+            
 
 app = App()
 core = Core()

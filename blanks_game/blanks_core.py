@@ -5,6 +5,7 @@ sys.path.append(".")
 from flask import Flask
 import copy
 import random
+import traceback
 
 import blanks_game.resources as resources
 
@@ -18,30 +19,35 @@ class Player():
         self.points = []
         self.deck = []
         self.time = 0
+        self.moves = []
     
 
 class Core(object):
     """Class containing whole game engine.
 "board", "bonuses", "players", "rarity_dict", "values_dict", "used_list"
     """
-    def __init__(self, players = 2, rarity_dict = "pl_rarity_dict", values_dict = "pl_values_dict"):
+    def __init__(self, players = 2, rarity_dict = "pl_rarity_dict", values_dict = "pl_values_dict",
+    alphabet = "pl_alphabet"):
 
         self.turn = 0
         self.moves = []
         self.move = ''
-        self.last = ''
 
         self.board = getattr(resources, "letter_board")
         self.bonuses = getattr(resources, "bonus_board")
         self.empty_board = copy.deepcopy(getattr(resources, "letter_board"))
-        
+
+        self.blanks_info = []
         self.players = players
+
 
         self.rarity_dict = getattr(resources, rarity_dict)
         self.values_dict = getattr(resources, values_dict)
-        self.letter_dict = ["bicycle"] #watch out, it's huuge 42 MB
+        self.word_dict = ["bicycle"] #watch out, it's huuge 42 MB
         self.dict_path = "blanks_game/slowa.txt"
+        self.alphabet = getattr(resources, alphabet)
         
+        self.matched = [] #used to complement deck when letter already lies on the board
         self.ava_list = []
         self.used_list = []
 
@@ -51,6 +57,7 @@ class Core(object):
         self.material = ''
         self.turn_type =''
 
+        self.dict_check = True
         
         self.create_players()
         for i in self.rarity_dict.keys():
@@ -59,7 +66,18 @@ class Core(object):
 
         #self.player
     
-    
+    ### DEBUG ###
+    def show_all_vars(self):
+
+        banned = ['word_dict', 'dict_path', 'board', 'bonuses', 'empty_board', 'rarity_dict', 'values_dict', 'before_board','ava_list', 'assert_bicycle', 'player', 'alphabet']
+        for attr in self.__dict__:
+            if attr not in banned:
+                print(f"{attr} = {getattr(self, attr)}")
+            else:
+                continue
+            
+
+
     ### UTILITY & GUI ###
     def get_input(self):
         print(f"Move pattern: <[!n/p/s]> <letters> <position(A-O|1-15)> <direction (h/v)>")
@@ -106,7 +124,7 @@ class Core(object):
                     raise WrongArgumentError(f"Wrong arguments: {m[1]}")
 
                 m[1] = eval('('+x+','+str(int(s) - 1)+')')
-                print(f"m[1]: {m[1]}")
+                #print(f"m[1]: {m[1]}")
 
             if m[2] == "h":
                 m[2] = "horizontal"
@@ -135,6 +153,9 @@ class Core(object):
                     return ["s", "surrender"]
                     #surrender variation
                 
+                elif '!c' in m:
+                    return ["c", m[1], m[2]]
+
                 else:
                     raise WrongArgumentError(f"argument: {move[1]}")
             except WrongArgumentError as err:
@@ -175,6 +196,8 @@ class Core(object):
         
         print("\n")
     
+    def print_field(self, pos):
+        return self.board[pos[0]][pos[1]]
     def print_ui(self, p):
         print(f"|ACTUAL PLAYER: {p} || DECK: {self.player[p].deck} || SCORE: {self.player[p].points} |")
         print(f"SCOREBOARD: {[self.player[i].points for i in range (self.players)]}")
@@ -183,11 +206,40 @@ class Core(object):
         for i in range(25):
             print("=", end='')
         print("\n")
-        print(err)
+        print(traceback.print_exc())
         print()
         for i in range(25):
             print("=", end='')
         print("\n")
+
+    def blank_check(self, move, deck):
+        deck = copy.deepcopy(deck) + self.matched
+        w = move[1]
+        s = move[2]
+        d = move[3]
+        i = 0
+        b = []
+        for char in w:
+            #print(f"char: {char}, i: {i}")
+            if char in deck:
+                del(deck[deck.index(char)])
+            else:
+                if '*' in deck:
+                    del(deck[deck.index('*')])
+                    if d == "horizontal":
+                        b.append([(s[0],s[1]+i), char])
+                    elif d == "vertical":
+                        b.append([(s[0]+i,s[1]), char])
+            i += 1
+            for j in self.blanks_info:
+                for k in b:
+                    if j[0] == k[0]:
+                        #print(f"COMPARISON: {j[0], k[0]}")
+                        b.remove(k)
+            #print(f"B: {b}")
+        return b
+
+            
 
     ### PLAYER & DICT MANIPULATION ###
     def create_players(self):
@@ -195,18 +247,107 @@ class Core(object):
 
     def handle_dict(self, dict_path = "dict_path"):
         dict_path = getattr(self, dict_path)
-        letter_dict = self.letter_dict
+        word_dict = self.word_dict
         f = open(dict_path, 'rt')
         n = 0
         for line in f.readlines():
             n+=1
-            letter_dict.append(line[0:-1])
+            word_dict.append(line[0:-1])
         #print(n)
         f.close()
-        return letter_dict    
+        return word_dict    
     
     
     ### VALIDITY CHECK ###
+
+    def probe(self, pos, direction):
+        ref_dict = {"left":(0,-1), "right":(0,1), "up": (-1,0), "down": (1,0)}
+        
+        step = ''
+        for i in ref_dict:
+            if i == direction:
+                step = ref_dict[i] 
+
+        end_step = [pos[0]-step[0], pos[1]-step[1]]
+
+        next_step = [pos[0]+step[0], pos[1]+step[1]]
+
+        for i in pos:
+            if i < 0 or i > 14:
+                return ''
+
+        #print(self.board[pos[0]][pos[1]])
+        if self.board[pos[0]][pos[1]] == 0:
+            return ''
+        else:
+            return self.probe(next_step, direction) + self.board[pos[0]][pos[1]]
+
+
+    def map_words(self, move):
+        w = move[1] #word
+        s = list(move[2]) #start
+        d = move[3] #direction
+        
+        #self.print_board()
+
+        n = {"left":[], "right":[], "up":[], "down":[]}
+        words = []
+
+        #next character of the word
+        if d == "horizontal":
+            step = (0,1)
+        else:
+            step = (1,0)
+
+
+        for i in range(len(w)):
+            n["left"].append(self.probe(s, "left"))
+            n["right"].append(self.probe(s, "right")[::-1])
+            n["up"].append(self.probe(s, "up"))
+            n["down"].append(self.probe(s, "down")[::-1])
+
+            for j in range(len(s)):
+                s[j] += step[j]
+        
+        
+
+        for i in n:
+            for j in range(len(n[i])):
+                #words.append(n[i][j])
+                words.append(n[i][j])
+
+        #print(f"words (after probes): {words}")
+        
+        h = []
+        v = []
+        sole = []
+        l = len(w)
+        for i in range(l):
+            h.append(words[i][:-1]+words[i+l])
+            v.append(words[i+l*2][:-1]+words[i+l*3])
+        
+        words = []
+
+        for i in range(len(v)):
+            if len(v[i]) > 1:
+                words.append(v[i])
+
+        for i in range(len(h)):
+            if len(h[i]) > 1:
+                words.append(h[i])
+
+        for i in words:
+            if i not in sole:
+                sole.append(i)
+            else:
+                continue
+        
+        words = sole
+    
+        return words
+                
+
+
     def check_space(self, move):
 
         #debug
@@ -259,24 +400,27 @@ class Core(object):
 
             else:
                 for i in range(len(word)):
-                    if direction == "horizontal":
-                        if board[start[0]][start[1]+len(word)+1] != 0:
-                            return True
-                        if board[start[0]][start[1]-1] != 0:
-                            return True
-                        if board[start[0]+1][start[1]+i] != 0:
-                            return True
-                        if board[start[0]-1][start[1]+i] != 0:
-                            return True
-                    elif direction == "vertical":
-                        if board[start[0]-1][start[1]] != 0:
-                            return True
-                        if board[start[0]+len(word)+1][start[1]] != 0:
-                            return True
-                        if board[start[0]+i][start[1]+1] != 0:
-                            return True
-                        if board[start[0]+i][start[1]-1] != 0:
-                            return True
+                    try:
+                        if direction == "horizontal":
+                            if board[start[0]][start[1]+len(word)+1] != 0:
+                                return True
+                            if board[start[0]][start[1]-1] != 0:
+                                return True
+                            if board[start[0]+1][start[1]+i] != 0:
+                                return True
+                            if board[start[0]-1][start[1]+i] != 0:
+                                return True
+                        elif direction == "vertical":
+                            if board[start[0]-1][start[1]] != 0:
+                                return True
+                            if board[start[0]+len(word)+1][start[1]] != 0:
+                                return True
+                            if board[start[0]+i][start[1]+1] != 0:
+                                return True
+                            if board[start[0]+i][start[1]-1] != 0:
+                                return True
+                    except IndexError:
+                        return True
                 raise NotStickingError("Lack of neighbouring words")
 
                         
@@ -296,10 +440,14 @@ class Core(object):
 
             if direction == "horizontal":
                 for x in range(len(word)):
+                    if board[start[0]][start[1]+x] == word[x]:
+                        self.matched.append(word[x])
                     if board[start[0]][start[1]+x] != word[x] and board[start[0]][start[1]+x] != 0:
                         raise AlreadyFilledError(f"Horizontal, {x+1} letter doesn't match.")
             if direction == "vertical":
                 for y in range(len(word)):
+                    if board[start[0]+y][start[1]] == word[y]:
+                        self.matched.append(word[y])
                     if board[start[0]+y][start[1]] != word[y] and board[start[0]+y][start[1]] != 0:
                         raise AlreadyFilledError(f"Vertical, {y+1} letter doesn't match.")
         except BaseException as err:
@@ -309,70 +457,58 @@ class Core(object):
 
     def check_letters(self, word, deck):
         a = copy.deepcopy(deck)
+        a = a + self.matched
         for char in word:
             if char in a:
                 del(a[a.index(char)])
             else:
+                if '*' in a:
+                    del(a[a.index('*')])
+                    continue
                 raise DeckLetterLackError(f"You miss letter: {char}")
         
         return True
 
-    def check_dictionary(self, word, letter_dict = []):
 
-        letter_dict = self.letter_dict
-        #print(f"Word: {word}, Dict: {letter_dict[letter_dict.index(word)]}")
+    def check_dictionary(self, word, word_dict = []):
 
-        if not word in letter_dict:
+        word_dict = copy.deepcopy(self.word_dict)
+        #print(f"Word: {word}, Dict: {word_dict[word_dict.index(word)]}")
+        
+        # if '*' in word:
+        #     n = word.count('*')
+        #     pos = []
+        #     good = []
+        #     f = False
+        #     nw = ''
+        #     if n == 1:
+        #         for a in self.alphabet:
+        #             for char in word:
+        #                 if char == '*':
+        #                     nw += a
+        #                 else:
+        #                     nw += char
+        #             pos.append(nw)
+        #             nw = ''
+
+        #     print(len(pos))
+        #     print(pos)
+        #     for i in pos:
+        #         if i in word_dict:
+        #             good.append(i)
+            
+        #     if len(good) > 0:
+        #         print(good)
+        #         return True
+                
+        #     raise LackOfWordInDictionary(f"{word} hasn't been found in used dicitonary.")
+                        
+
+        if not word in word_dict:
 
             raise LackOfWordInDictionary(f"{word} hasn't been found in used dicitonary.")
         else:
             return True
-
-    def map_grid(self, pos):
-        right = self.map_line((0,1),pos)
-        left = self.map_line((0,-1),pos) 
-        up = self.map_line((-1,0),pos)
-        down = self.map_line((1,0),pos) 
-        print()
-        print(f"Start element: {self.board[pos[0]][pos[1]]}, its pos (program): {pos}")
-        print(
-f'''right: {right} {self.board[right[0]][right[1]]}
-left: {left} {self.board[left[0]][left[1]]}
-up: {up} {self.board[up[0]][up[1]]}
-down: {down} {self.board[down[0]][down[1]]}''')
-        return [right, left, up, down]
-
-    def map_line(self, direction, pos):
-        #directions:
-        #(0, 1) - right
-        #(0, -1) - left
-        #(1, 0) - up
-        #(-1, 0) - down
-
-        new_pos = []
-        x = self.board[pos[0]][pos[1]]
-        # if x != 0:
-        #     print(f'Element: {x} is on pos(programist indexing): {pos}')
-
-        if self.board[pos[0]][pos[1]] == 0:
-            new_pos.append(pos[0]-direction[0]) 
-            new_pos.append(pos[1]-direction[1])
-            return new_pos
-
-        else:
-            new_pos.append(pos[0]+direction[0]) 
-            new_pos.append(pos[1]+direction[1])
-            return self.map_line(direction, new_pos)
-
-    def form_words(self, pos_list):
-        words = ['','']
-
-        #x range
-        x = pos_list[0][1]-pos_list[1][1]+1
-
-        #y range
-        y = pos_list[3][0]-pos_list[2][0]+1
-        print(x, y)
 
 
     ### BOARD MANIPULATION & SCORING ###
@@ -410,8 +546,11 @@ down: {down} {self.board[down[0]][down[1]]}''')
         new_pos = []
         new_pos.append(pos[0]+direction[0]) 
         new_pos.append(pos[1]+direction[1])
+        try:
+            x = self.board[pos[0]][pos[1]]
+        except:
+            return 0
 
-        x = self.board[pos[0]][pos[1]]
         if x != 0:
             pass
             #print(x, new_pos)
@@ -443,6 +582,7 @@ down: {down} {self.board[down[0]][down[1]]}''')
         letter = ''
         first = False
         start = []
+        f = True
 
         for y in range (len(before_board)):
             for x in range (15):
@@ -452,10 +592,21 @@ down: {down} {self.board[down[0]][down[1]]}''')
                         start.append(x)
                         first = True
                     bonus_list.append(self.bonuses[y][x])
-                    placed.append(board[y][x])
-       
-        self.last = self.last.join(placed)
 
+                    if len(self.blanks_info) > 0:
+                        f = True
+                        for j in self.blanks_info:
+                            if j[0] == (y,x):
+                                placed.append('*')
+                                f = False
+                        if f == True:
+                            placed.append(board[y][x])
+                    else:
+                        placed.append(board[y][x])
+
+       
+
+        #print(f"PLACED: {placed}")
         for i in range(len(placed)):
             if self.move[3] == "vertical":
                 if i == 0:
@@ -506,6 +657,8 @@ down: {down} {self.board[down[0]][down[1]]}''')
                 score += letter_value
             if i == 6:
                 fifty = True
+            #print(f"BONUS LIST: {bonus_list}")
+
         score = score * (2**dw_count) * (3**tw_count)  
         if fifty:
             score += 50
@@ -517,18 +670,31 @@ down: {down} {self.board[down[0]][down[1]]}''')
     # deck -> used
     def rm_letters(self, word, deck):
         for char in word:
-            del(deck[deck.index(char)])
-            self.used_list.append(char)
+            if char in self.matched:
+                del(self.matched[self.matched.index(char)])
+                continue
+            if char in deck:
+                del(deck[deck.index(char)])
+                self.used_list.append(char)
+            else:
+                del(deck[deck.index('*')])
+                self.used_list.append('*')
+            
+        # print(f"self.matched after rm: {self.matched}")
+        # print(f"self.player.deck after rm: {deck}")
         return deck
 
     # avaivable -> deck
     def get_letters(self, count):
         to_return = []
         for i in range (count):
-            chosen = random.choice(range(len(self.ava_list)))
+            chosen = random.choice(range(len(self.ava_list))) 
             to_return.append(self.ava_list[chosen])
+
+
             del(self.ava_list[chosen])
-        
+        # for i in range(2):
+        #     to_return.append('*')
         return to_return
 
     # deck -> avaivable
@@ -550,19 +716,7 @@ down: {down} {self.board[down[0]][down[1]]}''')
             return pre[i]
         else: 
             return ["s"]
-    #dead method
-    def extract_placed(self):
-        before_board = self.before_board
-        board = self.board
-        placed = []
 
-        for y in range (len(before_board)):
-            for x in range (15):
-                if before_board[y][x] != board[y][x]:
-                    placed.append(board[y][x])
-       
-        self.last = self.last.join(placed)
-        return self.last
 
     
     
