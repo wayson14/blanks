@@ -60,19 +60,19 @@ class App(object):
             
 
             #turn type
-            turn_type = move[0]
+            core.turn_type = move[0]
                 
 
             #catches exception from particular turn
             try:
-                if turn_type == "n":
+                if core.turn_type == "n":
                     self.normal_turn()
-                elif turn_type == "p":
+                elif core.turn_type == "p":
                     self.pass_turn()
-                elif turn_type == "s":
+                elif core.turn_type == "s":
                     self.surrender_turn()
-                elif turn_type == "e":
-                    self.surrender_turn()
+                elif core.turn_type == "e":
+                    self.exchange_turn()
                 else:
                     raise ValueError("Turn type not    specified!")
             except BaseException as err:
@@ -138,10 +138,38 @@ class App(object):
             raise err
 
     def pass_turn(self, move = "move"):
+        p = self.player_turn
         core.moves.append('!p')
+        core.player[self.player_turn].moves.append(f"!p")
+        core.player[p].points.append(0)
         pass
+    
+
+    ### TO BE CONTINUED
+    def exchange_turn(self, move = "move"):
+        p = self.player_turn
+        try:
+            move = getattr(core, move)
+        except BaseException as err:
+            raise err
+
+        w = move[1]
+
+        core.return_letters(w, core.player[p].deck)
+        r = core.get_letters(len(w))
+
+        for i in r:
+            core.player[p].deck.append(i)
+            
+        core.player[p].points.append(0)
+        core.player[self.player_turn].moves.append(f"!e {w}")
 
     def surrender_turn(self, move = "move"):
+        p = self.player_turn
+
+        core.player[p].points.append(0)
+        core.player[self.player_turn].moves.append(f"!s")
+
         for p in range(core.players):
             print(f"PLAYER {p} MOVES: ")
             for i in range(len(core.player[p].moves)):

@@ -282,7 +282,6 @@ class Core(object):
         else:
             return self.probe(next_step, direction) + self.board[pos[0]][pos[1]]
 
-
     def map_words(self, move):
         w = move[1] #word
         s = list(move[2]) #start
@@ -346,8 +345,6 @@ class Core(object):
     
         return words
                 
-
-
     def check_space(self, move):
 
         #debug
@@ -402,7 +399,7 @@ class Core(object):
                 for i in range(len(word)):
                     try:
                         if direction == "horizontal":
-                            if board[start[0]][start[1]+len(word)+1] != 0:
+                            if board[start[0]][start[1]+len(word)] != 0:
                                 return True
                             if board[start[0]][start[1]-1] != 0:
                                 return True
@@ -413,7 +410,7 @@ class Core(object):
                         elif direction == "vertical":
                             if board[start[0]-1][start[1]] != 0:
                                 return True
-                            if board[start[0]+len(word)+1][start[1]] != 0:
+                            if board[start[0]+len(word)][start[1]] != 0:
                                 return True
                             if board[start[0]+i][start[1]+1] != 0:
                                 return True
@@ -468,7 +465,6 @@ class Core(object):
                 raise DeckLetterLackError(f"You miss letter: {char}")
         
         return True
-
 
     def check_dictionary(self, word, word_dict = []):
 
