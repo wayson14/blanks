@@ -6,7 +6,19 @@ the blanks project index
 
 
 {% block content %} 
-<h1>{{func_module.bikes()}}</h1>
+<div class = 'board_box'>asdf</div>
 <h1>{{content}}</h1>
+    <table>
+        {%for i in board%}
+            <tr>
+                {%for j in i%}
+                {%if j == 0%}
+                {%endif%}
+                    <td>{{j}}</td>
+                {%endfor%}
+            </tr>
+        {%endfor%}
+    </table>
 {% endblock %}
+
 
