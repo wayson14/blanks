@@ -7,9 +7,9 @@ import copy
 import random
 import traceback
 
-import blanks_game.resources as resources
+import core.resources as resources
 
-from blanks_game.exception_module import *
+from core.exception_module import *
 
 
 
@@ -68,13 +68,15 @@ class Core(object):
     
     ### DEBUG ###
     def show_all_vars(self):
-
+        to_return = {}
         banned = ['word_dict', 'dict_path', 'board', 'bonuses', 'empty_board', 'rarity_dict', 'values_dict', 'before_board','ava_list', 'assert_bicycle', 'player', 'alphabet']
         for attr in self.__dict__:
             if attr not in banned:
-                print(f"{attr} = {getattr(self, attr)}")
+                to_return[attr] = getattr(self, attr)
+                #print(f"{attr} = {getattr(self, attr)}")
             else:
                 continue
+        return to_return
             
 
 

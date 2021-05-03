@@ -1,0 +1,13 @@
+
+table, td, th {
+    border: 1px solid black;
+
+}
+.board_cell{
+    background-color: blue;
+    width: 20px;
+    border: 1px solid black;
+}
+.board_outer{
+    border: 1px solid black;
+}
