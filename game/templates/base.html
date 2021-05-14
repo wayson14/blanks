@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!--CSS-->
 
+        {%block head%} 
+        {%endblock%}
         <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
 
         <!--Bootstrap v5 links-->
@@ -16,7 +18,6 @@
 
     </head>
     <body>
-      <h1>IM HERE</h1>
         <!--Bootstrap navbar-->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">

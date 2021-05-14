@@ -1,0 +1,61 @@
+{% extends "base.html" %} 
+
+{%block title%}
+mesa {{id}}
+{%endblock%}
+
+{%block head%}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
+{%endblock%}
+
+{% block content %}
+
+{%for k in vars_dict%} 
+    <div>{{k}}: {{vars_dict[k]}}</div>
+{%endfor%}
+<div></div>
+    
+    <table class="board_outer">
+        {% set y = []%}
+        {% set x = []%}    
+        {%for i in board%}
+            {%if y == []%}
+                <tr class="field-row">
+                    <td class="field-header">X</td>
+                    {%for a in range(15)%}
+                        <td class="field-header">{{a+1}}</td>
+                    {%endfor%}
+                </tr>
+            {%endif%}
+
+
+            <tr class="field-row">
+                <td class="field-header">{{"ABCDEFGHIJKLMNO"[y|length]}}</td>
+            
+            {% if y|length < 15 %}
+                {% set __ = y.append(1)%}
+            {% endif %}
+
+            {% set x = []%}
+            {%for j in i%}
+                {% set field_class = "field-" + bonuses[y|length -1][x|length] %}
+                <td class={{field_class}}>{{j}}</td>
+
+                {% if x|length < 14 %}
+                    {% set __ = x.append(1)%}
+                {% endif %}
+            {%endfor%}
+            </tr>
+            
+        {%endfor%}
+    </table>
+
+    <form method="post">
+        <br>
+        <p><label for="move">Write your move:</label><br>
+        <input type="text" name="move"/>
+        <input type="submit" value="move"/></p>
+    </form>
+{% endblock %}
+
+

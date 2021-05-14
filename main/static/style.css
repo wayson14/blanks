@@ -1,5 +1,46 @@
 
-table, td, th {
-    border: 1px solid blue;
 
+
+/*BOARD SECTION*/
+.board_outer {
+    border: 2px solid black;
+
+}
+
+/*class FIELD*/
+[class*="field-"] {
+    border: 1px solid darkgrey;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    text-align: center;
+}
+.field-row {
+    font-size: 15px;
+}
+
+.field-header {
+    font-size: 16px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid darkgrey;
+    text-alig: center;
+    background-color: darkolivegreen;
+    color: white;
+}
+/*BONUSES*/
+.field-NM {
+    background-color: rgb(39, 126, 90);
+}
+.field-DL {
+    background-color: deepskyblue;
+}
+.field-TL {
+    background-color: darkslateblue;
+}
+.field-DW {
+    background-color: lightcoral;
+}
+.field-TW {
+    background-color: darkred;
 }
