@@ -2,7 +2,7 @@ from flask import render_template, Blueprint, request, redirect, url_for
 
 
 import core.blanks_core as blanks_core
-
+import game.mesa_core as mesa_core
 ### for purpose of development there will be only 3 instances of Core() (further called "mesas") 
 ### mesa number is also a game ID visible in the URL                                             
 ### core[0] (thus ID = 0) is reserved for testing purposes              
@@ -28,7 +28,8 @@ def mesa(id):
     id = int(id)
     if request.method == "POST":
         move = request.form["move"]
-        core[id].move = move
+        core[id] = mesa_core.make_turn(core[id], move)
+        
         return redirect(url_for("game.mesa", id = id))
     else:
         return render_template("mesa.html.jinja", board = core[id].board, bonuses = core[id].bonuses, vars_dict = core[id].show_all_vars(), id = id)
