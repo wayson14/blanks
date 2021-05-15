@@ -29,6 +29,8 @@ class Core(object):
     def __init__(self, players = 2, rarity_dict = "pl_rarity_dict", values_dict = "pl_values_dict",
     alphabet = "pl_alphabet"):
 
+        self.errors = []
+        
         self.turn = 0
         self.moves = []
         self.move = ''

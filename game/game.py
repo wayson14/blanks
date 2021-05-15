@@ -3,8 +3,15 @@ from flask import render_template, Blueprint, request, redirect, url_for
 
 import core.blanks_core as blanks_core
 import game.mesa_core as mesa_core
-### for purpose of development there will be only 3 instances of Core() (further called "mesas") 
-### mesa number is also a game ID visible in the URL                                             
+
+
+
+### 1. "mesa" is a particular game between players.
+### 2. "core" is an object (distinct for every mesa) which contains atributes and methods specific for particular game - also "player" objects are stored within it
+### 3. "engine" is an object used to 'play' the game - i.e. it modifies properities in "core" and binds everything. Main method of "engine" is "turn" - makesa single turn further
+
+### for purpose of development there will be only 3 instances of Core() 
+### mesa number is also an ID                                             
 ### core[0] (thus ID = 0) is reserved for testing purposes              
 
 
@@ -13,6 +20,7 @@ import game.mesa_core as mesa_core
 board_count = 5
 for i in range(board_count):
     core = [blanks_core.Core() for i in range(board_count)]
+engine = mesa_core.Engine()
 game = Blueprint("game", __name__, static_folder="static", template_folder="templates")
 
 
@@ -27,12 +35,12 @@ def test():
 def mesa(id):
     id = int(id)
     if request.method == "POST":
-        move = request.form["move"]
-        core[id] = mesa_core.make_turn(core[id], move)
-        
+        material = request.form["move"]
+        core[id] = mesa_core.make_turn(core[id], material)
+        core[id] = engine.turn(core[id], material)
         return redirect(url_for("game.mesa", id = id))
     else:
-        return render_template("mesa.html.jinja", board = core[id].board, bonuses = core[id].bonuses, vars_dict = core[id].show_all_vars(), id = id)
+        return render_template("mesa.html.jinja", core = core[id], board = core[id].board, bonuses = core[id].bonuses, vars_dict = core[id].show_all_vars(), id = id)
 
 
 
