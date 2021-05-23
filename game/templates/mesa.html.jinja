@@ -47,7 +47,20 @@ mesa {{id}}
     </td>
 
     <td>
-        <table class="table-attrs">
+
+        {%for player in core.player%} 
+            <table class="table-attrs">
+                {%for item in player.__dict__%}
+                    <tr class="table-attrs-row">
+                        <td class="table-attrs-key">{{item}}</td>
+                        <td class="table-attrs-value">{{player.__dict__[item]}}</td>
+                    </tr>
+                {%endfor%}
+            </table>
+            <br>
+        {%endfor%}
+        
+        <table>
             {%for k in vars_dict%} 
                 <tr class="table-attrs-row">
                     <td class="table-attrs-key">{{k}}</td>
@@ -59,12 +72,19 @@ mesa {{id}}
 </table>
 
 
-    <form method="post">
-        <br>
-        <p><label for="move">Write your move:</label><br>
-        <input type="text" name="move"/>
-        <input type="submit" value="move"/></p>
-    </form>
+<form method="post">
+    <br>
+    <p><label for="move">Write your move:</label><br>
+    <input type="text" name="move"/>
+    <input type="submit" value="move"/></p>
+</form>
+<form method="post">
+    <br>
+    <p><input type="submit" value="restart" name="restart"/></p>
+</form>
+
+<div class="info-box">{{core.info}}<div>
+
 {% endblock %}
 
 

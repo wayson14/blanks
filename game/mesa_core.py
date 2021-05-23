@@ -1,63 +1,212 @@
-import copy, random, traceback
+import copy
+import random
+import traceback
 
 from core.resources import *
 from core.exception_module import *
+import core.blanks_core as blanks_core
 
 
-### material = raw input from a user
-### move = checked input, valid move - ready to be processed further
-### core = instance of a Core class 
+# material = raw input from a user
+# move = checked input, valid move - ready to be processed further
+# core = instance of a Core class
 
 
 class Engine(object):
     def __init__(self):
-        self.errors = []
+        self.id_list = []
         pass
-    
+
+    def game_initialization(self, core):
+        try:
+            if core.dict_check == True:
+                core.word_dict = core.handle_dict()
+
+            for i in range(core.players):
+                core.player[i].id = self.generate_id()
+                core.player[i].deck = core.get_letters(7)
+            core.turn += 1
+        except BaseException as err:
+            core.append(err)
+        else:
+            return True
+
     def turn(self, core, material):
-        '''This method is an "Axis Mundi" of the whole server
-        side game (engine instance)
-        Returns given object (modified)'''
+        '''Returns given object (modified)'''
 
+        ### initialization ###
+        self.core = core
 
-        turn_run_flag = True
-
-        while turn_run_flag == True:
+        while core.run_flag == True:
             core.errors = []
-            turn_run_flag = False
 
             try:
-                check_material(core, material)
+                self.checking_material(core, material)
             except BaseException as err:
-                core.errors.append((err,traceback.format_exc()))
-                continue
-            
+                core.errors.append((err, traceback.format_exc()))
+                break
 
 
+            try:
+                self.start_proper_turn_type(core, material)
+            except BaseException as err:
+                core.errors.append((err, traceback.format_exc()))
+                break            
 
+            core.player_turn += 1
+            core.turn += 1
+            if core.player_turn > core.players-1:
+                core.player_turn = 0
+            break
         return core
-        ### TO BE CONTINUED 15.05 ###
-                
-            
 
-def check_material(core, material):
-    try:
-        core.turn += 1
-        move = core.parse_input(material)
-    except BaseException as err:
-        raise err
-    
-    try:
-        assert type(move) == list
-    except BaseException as err:
-        raise err
-    else:
-        core.move = move
+    def checking_material(self, core, material):
+        if material == ' ':
+            core.move = core.premoves(core.turn)
+            return True
+
+        try:
+            move = core.parse_input(material)
+
+        except BaseException as err:
+            raise err
+
+        try:
+            assert type(move) == list
+        except BaseException as err:
+            raise err
+        else:
+            core.move = move
+            return True
+
+    def generate_id(self):
+        id = ''
+        while True:
+            for i in range(5):
+                id += chr(random.randint(97, 123))
+
+            if id not in self.id_list:
+                break
+
+        return id
+
+    def start_proper_turn_type(self, core, material):
+        core.turn_type = core.move[0]
+        try:
+            if core.turn_type == "n":
+                self.normal_turn(core)
+            elif core.turn_type == "p":
+                self.pass_turn(core)
+            elif core.turn_type == "s":
+                self.surrender_turn(core)
+            elif core.turn_type == "e":
+                self.exchange_turn(core)
+            else:
+                raise ValueError("Turn type not specified!")
+        except BaseException as err:
+            raise err
+        else:
+            return True
+
+    def normal_turn(self, core, move="move"):
+        try:
+            move = getattr(core, move)
+            words = []
+            word = move[1]
+            deck = core.player[core.player_turn].deck
+
+        # checking whether move is possible
+
+            if core.space_check == True:
+                core.check_space(move)
+            if core.board_check == True:
+                core.check_board(move)
+            if core.blanks_check == True:
+                core.blanks_info += core.blank_check(move, deck)
+            if core.allignment_check == True:
+                core.check_allignment(move)
+            if core.letters_check == True:
+                core.check_letters(word, deck)
+
+        except BaseException as err:
+            raise err
+
+        try:
+            # backuping board, placing word
+            core.make_before_board()
+            core.place_word(move)
+
+            if core.dict_check == True:
+                words += core.map_words(move)
+
+                for i in words:
+                    core.check_dictionary(i)
+
+        except BaseException as err:
+
+            core.board = core.before_board
+            raise err
+
+        try:
+            # core.print_board(board="before_board")
+            # core.print_board()
+
+            score = core.score_word()
+            core.player[core.player_turn].points.append(score)
+
+            if core.letters_check == True:
+                core.rm_letters(word, deck)
+                core.player[core.player_turn].deck = deck +                    core.get_letters(7-len(deck))
+
+            core.player[core.player_turn].moves.append(move)
+
+        except BaseException as err:
+            raise err
+
         return True
 
+    def pass_turn(self, core, move="move"):
+        try:
+            p = core.player_turn
+            core.moves.append('!p')
+            core.player[core.player_turn].moves.append(f"!p")
+            core.player[p].points.append(0)
+        except BaseException as err:
+            raise err
+        return True
 
-def make_turn(core, move):
-    core.moves.append(move)
+    def exchange_turn(self, core, move="move"):
+        p = core.player_turn
+        try:
+            move = getattr(core, move)
+        except BaseException as err:
+            raise err
+        
+        try:
 
-    ### obscure function ###
-    return core
+            w = move[1]
+
+            core.return_letters(w, core.player[p].deck)
+            r = core.get_letters(len(w))
+
+            for i in r:
+                core.player[p].deck.append(i)
+
+            core.player[p].points.append(0)
+            core.moves.append(f"!e {w}")
+            core.player[core.player_turn].moves.append(f"!e {w}")
+
+        except BaseException as err:
+            raise err
+        
+        return True
+
+    def surrender_turn(self, core, move="move"):
+        p = core.player_turn
+
+        core.player[p].points.append(0)
+        core.player[core.player_turn].moves.append(f"!s")
+
+        #core.run_flag = False
+        
+        core.info = core.chose_winner()

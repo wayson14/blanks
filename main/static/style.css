@@ -1,6 +1,14 @@
-/*OUTPUT SECTION*/
-.output-prompt {
-    color:red;
+/*INFO SECTION*/
+[class*="info-"] {
+    border: 1px solid black;
+    width: 500px;
+    height: 100px;
+    font-size: 16px;
+    text-align: center;
+
+}
+.info-box {
+    background-color: cornsilk;
 }
 
 /*TABLE SECTION*/
@@ -36,6 +44,8 @@
     height: 30px;
     font-size: 16px;
     text-align: center;
+    color: whitesmoke;
+    font-style:italic ;
 }
 .field-row {
     font-size: 15px;
@@ -46,7 +56,7 @@
     width: 30px;
     height: 30px;
     border: 1px solid darkgrey;
-    text-alig: center;
+    text-align: center;
     background-color: darkolivegreen;
     color: white;
 }
