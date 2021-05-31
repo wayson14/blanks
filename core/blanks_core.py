@@ -11,7 +11,7 @@ sys.path.append(".")
 
 class Player():
     def __init__(self, n, id=None):
-        self.n = n
+        self.n = n 
         self.id = id
         self.points = []
         self.deck = []
@@ -26,6 +26,7 @@ class Core(object):
 
     def __init__(self, players=2, rarity_dict="pl_rarity_dict", values_dict="pl_values_dict",
                  alphabet="pl_alphabet"):
+        self.id = id
 
         self.errors = []
         self.info = "nothing yet"
@@ -61,12 +62,13 @@ class Core(object):
         # if True particular check occurs
         self.space_check = True
         self.board_check = True
-        self.blanks_check = False
+        self.blanks_check = True
         self.allignment_check = True
-        self.letters_check = False
-        self.dict_check = False
+        self.letters_check = True
+        self.dict_check = True
 
         self.restart = False
+        self.actual_turn = None
 
         self.create_players()
         for i in self.rarity_dict.keys():
@@ -260,7 +262,7 @@ class Core(object):
     def create_players(self):
         self.player = [Player(self) for p in range(self.players)]
         for i in range(len(self.player)):
-            self.player[i].n = i+1
+            self.player[i].n = i
 
     def handle_dict(self, dict_path="dict_path"):
         dict_path = getattr(self, dict_path)
@@ -489,9 +491,11 @@ class Core(object):
         else:
             return True
 
+    
+    
     ### BOARD MANIPULATION & SCORING ###
     # makes a copy of a board used to evaluate word score
-
+    
     def make_before_board(self):
 
         self.before_board = copy.deepcopy(self.board)
@@ -682,7 +686,7 @@ class Core(object):
             returned.append(char)
         return returned
 
-    def chose_winner(self):
+    def choose_winner(self):
         max = 0
         winner = ''
         

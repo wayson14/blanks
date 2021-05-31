@@ -1,4 +1,4 @@
-{% extends "base.html" %} 
+{% extends "base.html.jinja" %} 
 
 {%block title%}
 mesa {{id}}
@@ -6,84 +6,120 @@ mesa {{id}}
 
 {%block head%}
 <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
+
 {%endblock%}
 
 {% block content %}
-<table>
-    <td>
-        <table class="board_outer">
-            {% set y = []%}
-            {% set x = []%}    
-            {%for i in board%}
-                {%if y == []%}
+
+<div class="outer-container">
+    <div class="grid-container">
+        <div class="grid-item board-item">
+            <table class="board_outer">
+                {% set y = []%}
+                {% set x = []%}    
+                {%for i in board%}
+                    {%if y == []%}
+                        <tr class="field-row">
+                            <td class="field-header">X</td>
+                            {%for a in range(15)%}
+                                <td class="field-header">{{a+1}}</td>
+                            {%endfor%}
+                        </tr>
+                    {%endif%}
+
+
                     <tr class="field-row">
-                        <td class="field-header">X</td>
-                        {%for a in range(15)%}
-                            <td class="field-header">{{a+1}}</td>
-                        {%endfor%}
-                    </tr>
-                {%endif%}
-
-
-                <tr class="field-row">
-                    <td class="field-header">{{"ABCDEFGHIJKLMNO"[y|length]}}</td>
-                
-                {% if y|length < 15 %}
-                    {% set __ = y.append(1)%}
-                {% endif %}
-
-                {% set x = []%}
-                {%for j in i%}
-                    {% set field_class = "field-" + bonuses[y|length -1][x|length] %}
-                    <td class={{field_class}}>{{j}}</td>
-
-                    {% if x|length < 14 %}
-                        {% set __ = x.append(1)%}
+                        <td class="field-header">{{"ABCDEFGHIJKLMNO"[y|length]}}</td>
+                    
+                    {% if y|length < 15 %}
+                        {% set __ = y.append(1)%}
                     {% endif %}
-                {%endfor%}
-                </tr>
-            {%endfor%}
-        </table>
-    </td>
 
-    <td>
-
-        {%for player in core.player%} 
-            <table class="table-attrs">
-                {%for item in player.__dict__%}
-                    <tr class="table-attrs-row">
-                        <td class="table-attrs-key">{{item}}</td>
-                        <td class="table-attrs-value">{{player.__dict__[item]}}</td>
+                    {% set x = []%}
+                    {%for j in i%}
+                        {% set field_class = "field-" + bonuses[y|length -1][x|length] %}
+                        {% if not j == 0%}
+                            <td class={{field_class}}>{{j}}</td>
+                        {% else %}
+                            <td class={{field_class}}></td>
+                        {% endif %}
+                        {% if x|length < 14 %}
+                            {% set __ = x.append(1)%}
+                        {% endif %}
+                    {%endfor%}
                     </tr>
                 {%endfor%}
             </table>
-            <br>
-        {%endfor%}
-        
-        <table>
-            {%for k in vars_dict%} 
-                <tr class="table-attrs-row">
-                    <td class="table-attrs-key">{{k}}</td>
-                    <td class="table-attrs-value">{{vars_dict[k]}}</td>
-                </tr>
-            {%endfor%}
-        </table>
-    </td>
-</table>
+        </div>
+        <div class="grid-item info-box">
+            <div class="grid-container-info">
+
+                <div class="grid-item info-player_turn">
+                    <h4>TURN OF PLAYER {{core.player_turn}}</h4>
+                </div>
+
+                <div class="grid-item info-core">
+                        <h4>INFO</h4>
+                        {{core.info}}
+                </div>
+
+                <div class="grid-item info-flash">
+                    <h4>FLASH</h4>
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for msg in messages %} 
+                                <span>{{msg}}</span>
+                            {% endfor %} 
+                        {%endif%} 
+                    {%endwith%}
+                </div>
+                
+                <div class="grid-item info-player">
+                        <h4>PLAYER {{actual_player}}</h4>
+                        {% for l in core.player[actual_player].deck %}
+                            <span>{{l}}</span>
+                        {% endfor %}
+                </div>
+                <div class="grid-item info-score">
+                    <h4> SCORE </h4>
+                        <div class="grid-container-score">
+                            <div class="grid-container-score-inner">
+                                {% for p in range(core.players) %}
+                                    <div style="grid-column:{{p+1}}">{{core.player[p].id}}</div>
+                                {% endfor %}
+                            </div>
+                            {% for i in range(core.turn - 1)%}
+                                <div class="grid-container-score-inner">
+                                    {% for p in core.player %}
+                                        {% if p.moves[i] %}
+                                            <div style="grid-column:{{p.n+1}}">{{p.points[i]}}/{{p.moves[i][0]}}</div>
+                                        {% else %}
+                                            <div style="grid-column:{{p.n+1}}">-</div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                </div>
+            </div>
+        </div>
 
 
-<form method="post">
-    <br>
-    <p><label for="move">Write your move:</label><br>
-    <input type="text" name="move"/>
-    <input type="submit" value="move"/></p>
-</form>
-<form method="post">
-    <br>
-    <p><input type="submit" value="restart" name="restart"/></p>
-</form>
-
-<div class="info-box">{{core.info}}<div>
+        <div class="grid-item input-box">
+            <form method="post">
+                <br>
+                <p><label for="move"><i>Write your move: {word} {a-o 1-15} {h | v}<i></label><br>
+                <input class="move-text-field" type="text" name="move" placeholder="retorta h8 v"/>
+                <input class="button-submit" type="submit" value="move"/>
+                <input class="button-exit" type="submit" name="exit" value="exit"/>
+                </p>
+            </form>
+            {# <form method="post">
+            
+            </form> #}
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
