@@ -6,6 +6,6 @@ setup(
     packages = find_packages(),
     entry_points = {
         'console_scripts': [
-            'blanks=blanks_game.__main__:main'
+            'blanks=main.__main__:main'
         ]},
     )

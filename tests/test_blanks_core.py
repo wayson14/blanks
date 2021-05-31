@@ -3,9 +3,9 @@ import unittest
 import sys
 sys.path.append("..")
 
-from blanks_game.resources import *
-from blanks_game.blanks_core import *
-from blanks_game.exception_module import *
+from core.resources import *
+from core.blanks_core import *
+from core.exception_module import *
 
 class TestCore(unittest.TestCase):
 

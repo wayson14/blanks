@@ -1,0 +1,72 @@
+{% extends "base.html.jinja" %} 
+
+{%block title%}
+lobby
+{%endblock%}
+
+{%block head%}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='style.css')}}">
+{%endblock%}
+
+{% block content %}
+    {%set x = []%} 
+    {%set y = []%}
+    <div class="outer-container">
+        <div class="grid-container">
+            <div class = "grid-item info-box-lobby" style="height: auto">
+                <div class="grid-container-info">
+                    <div class="grid-item info-flash">
+                        <h4>INFO</h4>
+                        {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                                {% for msg in messages %} 
+                                    <h4>{{msg}}</h4>
+                                {% endfor %} 
+                            {%endif%} 
+                        {%endwith%}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-item" style="grid-row: 1">
+                <div class="lobby-header">Choose your seat</div>
+                <div class="grid-container-mesas">
+                    {%for core in cores%}
+
+                        {% set i = loop.index-1%}
+                        {% set l = 5%}
+                        {% set column = engine.get_column(i, l)%}
+
+                        {% set row = (i+1)//l+1%}
+                        {% if (i+1)%l == 0 %}
+                            {% set row = (i+1)//l %}
+                        {% endif %}
+
+                        <div class="grid-item info-box" style="grid-column: {{column}}; grid-row: {{row}}; width: 150px">
+                            <div class="info-form-lobby">
+                                <form method="post">
+                                    {%for player in core.player%}
+                                        {%if player.present == True%}
+                                            <span>Full</span>
+                                        
+                                        {%else%}
+                                            <input type="radio" name="controlpanel" value="{{player.n}}">
+                                            <span>Free</span>
+                                        {%endif%}
+                                        <br>
+
+                                    {%endfor%}
+                                    <input class="button-submit" type="submit" name="controlpanel" value="{{core.id}}">
+                                    {# {%for i in range(core.players)%}
+                                        <input type="radio" name="controlpanel" value="{{i}}" >
+                                    
+                                    {%endfor%} #}
+                                </form>
+                            </div>
+                        </div>
+                    {%endfor%}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
